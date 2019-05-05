@@ -5,6 +5,7 @@ package dev.lectio
 import dev.lectio.model.*
 import io.ktor.application.*
 import io.ktor.features.*
+import io.ktor.http.*
 import io.ktor.jackson.*
 import io.ktor.request.*
 import io.ktor.response.*
@@ -16,12 +17,13 @@ import org.litote.kmongo.reactivestreams.*
 import java.io.*
 
 private val client = KMongo.createClient().coroutine
-val database = client.getDatabase("LectioDb1")
+val database = client.getDatabase("LectioDb3")
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
     install(ContentNegotiation) { jackson() }
+    install(CORS) { anyHost() }
 
     routing {
         get("/tests/{id}") {
@@ -39,11 +41,13 @@ fun Application.module() {
             get {
                 call.respond(
                     User.col.find().toList().map {
+                        println("   stupid fucker")
                         it.run {
                             mapOf(
                                 "id" to id,
                                 "name" to name,
                                 "rank" to rank,
+                                "difficulty" to difficulty,
                                 "sessions" to mutableListOf<Map<String, Any>>().apply {
                                     for (session in sessionHistory) {
                                         this += mapOf(
@@ -76,6 +80,7 @@ fun Application.module() {
                                 "id" to id,
                                 "name" to name,
                                 "rank" to rank,
+                                "difficulty" to difficulty,
                                 "sessions" to mutableListOf<Map<String, Any>>().apply {
                                     for (session in sessionHistory) {
                                         this += mapOf(
@@ -92,6 +97,8 @@ fun Application.module() {
                 delete {
                     val id = call.parameters["id"]?.toInt() ?: return@delete
                     User.col.deleteOne(User::id eq id)
+
+                    call.respond(HttpStatusCode.NoContent)
                 }
 
                 route("/sessions") {
@@ -119,6 +126,29 @@ fun Application.module() {
 
                         user.recordSession(correct, incorrect)
                         call.respond(user.id)
+                    }
+                }
+
+                route("/difficulty") {
+                    get {
+                        val id = call.parameters["id"]?.toInt() ?: return@get
+                        val user = User.col.findOne(User::id eq id) ?: return@get
+
+                        call.respond(user.difficulty)
+                    }
+
+                    post("/set") {
+                        val id = call.parameters["id"]?.toInt() ?: return@post
+                        val user = User.col.findOne(User::id eq id) ?: return@post
+
+                        val new = call.receive<DifficultyPostWrapper>().new
+                        call.respond(
+                            if (user.updateDifficulty(new)) {
+                                HttpStatusCode.Created
+                            } else {
+                                HttpStatusCode.BadRequest
+                            }
+                        )
                     }
                 }
             }

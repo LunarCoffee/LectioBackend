@@ -8,8 +8,8 @@ POST http://142.1.5.223:1645/users/add
 Content-Type: application/json
 
 {
-  "name": "Yash",
-  "rank": 5
+  "name": "Tester",
+  "rank": 10
 }
 
 ###

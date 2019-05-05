@@ -8,6 +8,11 @@ import org.litote.kmongo.*
 class User(val name: String, val rank: Int) {
     // This tracks the number of incorrectly pronounced words in each session.
     val sessionHistory = mutableListOf<SessionStatistics>()
+
+    // The difficulty is a number between 0 and 4 (inclusive) that represents the difficulty of the
+    // lessons and practice sessions provided.
+    var difficulty = 0
+
     val id = curId.getAndIncrement().apply {
         GlobalScope.launch {
             if (idCol.find().toList().isEmpty()) {
@@ -18,10 +23,21 @@ class User(val name: String, val rank: Int) {
         }
     }
 
+    fun updateDifficulty(new: Int): Boolean {
+        if (new !in 0..4) {
+            return false
+        }
+        difficulty = new
+        updateDbObj()
+        return true
+    }
+
     fun recordSession(correct: List<String>, incorrect: List<String>) {
         sessionHistory += SessionStatistics(correct, incorrect)
-        GlobalScope.launch { col.updateOne(::id eq id, this@User) }
+        updateDbObj()
     }
+
+    private fun updateDbObj() = GlobalScope.launch { col.updateOne(::id eq id, this@User) }
 
     companion object {
         val col = database.getCollection<User>("Users2")
