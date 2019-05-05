@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package dev.lectio
 
 import dev.lectio.model.*
