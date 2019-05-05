@@ -15,7 +15,8 @@ import org.litote.kmongo.reactivestreams.*
 import java.io.*
 
 private val client = KMongo.createClient().coroutine
-val database = client.getDatabase("LectioDb3")
+val database = client.getDatabase("LectioDb6")
+val wordlist = File("resources/words/wordlist.txt").readLines()
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
@@ -33,6 +34,11 @@ fun Application.module() {
                     File("resources/tests/test-error.json")
                 }
             )
+        }
+
+        get("/words/{limit}") {
+            val limit = call.parameters["limit"]?.toInt() ?: return@get
+            call.respond(wordlist.shuffled().take(limit))
         }
 
         route("/users") {
@@ -61,8 +67,8 @@ fun Application.module() {
 
             post("/add") {
                 val user = call.receive<UserPostWrapper>().run { User(name, rank) }
-
                 User.col.insertOne(user)
+
                 call.respond(user.id)
             }
 
@@ -118,7 +124,10 @@ fun Application.module() {
                         val user = User.col.findOne(User::id eq id) ?: return@post
 
                         val (correct, incorrect) = call.receive<SessionStatistics>().run {
-                            Pair(correct, incorrect)
+                            Pair(
+                                correct.distinct().shuffled(),
+                                incorrect.distinct().shuffled()
+                            )
                         }
 
                         user.recordSession(correct, incorrect)
@@ -127,6 +136,7 @@ fun Application.module() {
                 }
 
                 route("/difficulty") {
+
                     get {
                         val id = call.parameters["id"]?.toInt() ?: return@get
                         val user = User.col.findOne(User::id eq id) ?: return@get
@@ -139,6 +149,7 @@ fun Application.module() {
                         val user = User.col.findOne(User::id eq id) ?: return@post
 
                         val new = call.receive<DifficultyPostWrapper>().new
+                        println("    dif $new")
                         call.respond(
                             if (user.updateDifficulty(new)) {
                                 HttpStatusCode.Created

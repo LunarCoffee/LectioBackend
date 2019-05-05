@@ -6,4 +6,3 @@
 *.ipr
 *.iws
 /gradle
-.gitignore

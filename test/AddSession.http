@@ -2,6 +2,13 @@ POST http://142.1.5.223:1645/users/0/sessions/add
 Content-Type: application/json
 
 {
-  "correct": ["Better", "At", "This", "Now"],
-  "incorrect": ["Oops"]
+  "correct": [
+    "Better",
+    "At",
+    "This",
+    "Now"
+  ],
+  "incorrect": [
+    "Oops"
+  ]
 }
