@@ -39,7 +39,6 @@ fun Application.module() {
             get {
                 call.respond(
                     User.col.find().toList().map {
-                        println("   stupid fucker")
                         it.run {
                             mapOf(
                                 "id" to id,
